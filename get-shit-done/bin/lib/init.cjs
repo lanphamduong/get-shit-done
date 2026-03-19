@@ -309,6 +309,13 @@ function cmdInitQuick(cwd, description, raw) {
   const timeBlocks = Math.floor(secondsSinceMidnight / 2);
   const timeEncoded = timeBlocks.toString(36).padStart(3, '0');
   const quickId = dateStr + '-' + timeEncoded;
+  const branchSlug = slug || 'quick';
+  const quickBranchName = config.quick_branch_template
+    ? config.quick_branch_template
+        .replace('{num}', quickId)
+        .replace('{quick}', quickId)
+        .replace('{slug}', branchSlug)
+    : null;
 
   const result = {
     // Models
@@ -319,6 +326,7 @@ function cmdInitQuick(cwd, description, raw) {
 
     // Config
     commit_docs: config.commit_docs,
+    branch_name: quickBranchName,
 
     // Quick task info
     quick_id: quickId,

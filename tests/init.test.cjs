@@ -679,6 +679,7 @@ describe('cmdInitQuick', () => {
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
+    assert.strictEqual(output.branch_name, null);
     assert.strictEqual(output.slug, 'fix-login-bug');
     assert.strictEqual(output.description, 'Fix login bug');
 
@@ -735,6 +736,44 @@ describe('cmdInitQuick', () => {
 
     const output = JSON.parse(result.output);
     assert.ok(output.slug.length <= 40, `Slug should be <= 40 chars, got ${output.slug.length}: "${output.slug}"`);
+  });
+
+  test('returns quick branch name when quick_branch_template is configured', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({
+        git: {
+          quick_branch_template: 'gsd/quick-{num}-{slug}',
+        },
+      }, null, 2)
+    );
+
+    const result = runGsdTools('init quick "Fix login bug"', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.ok(output.branch_name, 'branch_name should be set');
+    assert.ok(output.branch_name.startsWith('gsd/quick-'));
+    assert.ok(output.branch_name.endsWith('-fix-login-bug'));
+    assert.ok(output.branch_name.includes(output.quick_id), 'branch_name should include quick_id');
+  });
+
+  test('uses fallback slug in quick branch name when description is omitted', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({
+        git: {
+          quick_branch_template: 'gsd/quick-{quick}-{slug}',
+        },
+      }, null, 2)
+    );
+
+    const result = runGsdTools('init quick', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.ok(output.branch_name, 'branch_name should be set');
+    assert.ok(output.branch_name.endsWith('-quick'), `Expected fallback slug in branch name, got "${output.branch_name}"`);
   });
 });
 
